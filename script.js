@@ -278,7 +278,35 @@
   }
 
   /* ---------------------------------------------------------
-     5. FÁBRICA DE FLORES (SVG procedural)
+     5. FÁBRICA DE FLORES — emoji de girasol
+     (Antes eran pétalos SVG dibujados a mano: se notaban separados y
+     poco prolijos en pantallas chicas. El emoji 🌻 se reconoce al
+     instante, es consistente entre dispositivos y no pesa nada.)
+  --------------------------------------------------------- */
+  const FLOWER_EMOJI = "🌻";
+
+  const FLOWER_SIZE = {
+    primary: 58, secondary: 44, small: 30, secret: 84, final: 108,
+  };
+
+  /**
+   * Crea una flor como emoji, con un halo de luz cálida detrás.
+   * variant: "primary" | "secondary" | "small" | "secret" | "final"
+   */
+  function createFlowerSVG(variant = "secondary", opts = {}) {
+    const size = opts.size || FLOWER_SIZE[variant] || FLOWER_SIZE.secondary;
+
+    const el = document.createElement("span");
+    el.className = "flower-emoji";
+    el.textContent = FLOWER_EMOJI;
+    el.style.fontSize = size + "px";
+    el.setAttribute("aria-hidden", "true");
+
+    return el;
+  }
+
+  /* ---------------------------------------------------------
+     6. FÁBRICA DEL PERRITO DE LA PRADERA (SVG)
   --------------------------------------------------------- */
   const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -288,126 +316,6 @@
     return el;
   }
 
-  let flowerUID = 0;
-
-  /**
-   * Crea una flor SVG procedural con pétalos, centro detallado, luz y sombra.
-   * variant: "primary" | "secondary" | "small" | "secret" | "final"
-   */
-  function createFlowerSVG(variant = "secondary", opts = {}) {
-    flowerUID += 1;
-    const id = `fl${flowerUID}`;
-    const petals = opts.petals || (variant === "small" ? 5 : randInt(6, 8));
-    const size = opts.size || { primary: 132, secondary: 102, small: 62, secret: 168, final: 220 }[variant] || 96;
-    const petalColor = opts.petalColor || pick(["#F4D35E", "#E9B949", "#F1C64C"]);
-    const petalColorDeep = opts.petalColorDeep || "#C79A3B";
-    const centerColor = opts.centerColor || "#7A4E17";
-
-    const svg = svgEl("svg", {
-      viewBox: "0 0 200 200",
-      width: size, height: size,
-      "aria-hidden": "true",
-    });
-
-    const defs = svgEl("defs");
-    const petalGrad = svgEl("radialGradient", { id: `pg-${id}`, cx: "50%", cy: "20%", r: "80%" });
-    petalGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#FFF3CE" }));
-    petalGrad.appendChild(svgEl("stop", { offset: "55%", "stop-color": petalColor }));
-    petalGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": petalColorDeep }));
-    defs.appendChild(petalGrad);
-
-    const centerGrad = svgEl("radialGradient", { id: `cg-${id}`, cx: "42%", cy: "38%", r: "65%" });
-    centerGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#B9781F" }));
-    centerGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": centerColor }));
-    defs.appendChild(centerGrad);
-
-    const glow = svgEl("filter", { id: `gl-${id}`, x: "-60%", y: "-60%", width: "220%", height: "220%" });
-    const blur = svgEl("feGaussianBlur", { stdDeviation: variant === "secret" || variant === "final" ? 9 : 5 });
-    blur.setAttribute("result", "b");
-    glow.appendChild(blur);
-    const merge = svgEl("feMerge");
-    merge.appendChild(svgEl("feMergeNode", { in: "b" }));
-    merge.appendChild(svgEl("feMergeNode", { in: "SourceGraphic" }));
-    glow.appendChild(merge);
-    defs.appendChild(glow);
-
-    svg.appendChild(defs);
-
-    const cx = 100, cy = 108;
-
-    // halo/glow trasero (visible siempre de forma tenue, se intensifica al tocarla)
-    const glowRadius = { final: 84, secret: 66, primary: 52, secondary: 42, small: 28 }[variant] || 42;
-    const glowCircle = svgEl("circle", {
-      cx, cy, r: glowRadius,
-      fill: petalColor,
-      opacity: 0.35,
-      filter: `url(#gl-${id})`,
-      class: "flower-glow",
-    });
-    svg.appendChild(glowCircle);
-
-    // tallo
-    const stem = svgEl("path", {
-      d: `M ${cx} ${cy + 6} C ${cx - 4} ${cy + 40}, ${cx + 6} ${cy + 60}, ${cx} ${cy + 92}`,
-      stroke: "#4B5A2E", "stroke-width": 3.4, fill: "none", "stroke-linecap": "round",
-      opacity: 0.85,
-    });
-    svg.appendChild(stem);
-
-    // una hojita
-    const leaf = svgEl("path", {
-      d: `M ${cx} ${cy + 52} C ${cx + 18} ${cy + 48}, ${cx + 26} ${cy + 62}, ${cx + 6} ${cy + 70} Z`,
-      fill: "#5C6B37", opacity: 0.8,
-    });
-    svg.appendChild(leaf);
-
-    // pétalos
-    const petalGroup = svgEl("g", { class: "flower-petals" });
-    const petalLen = {
-      final: 74, secret: 62, primary: 46, secondary: 36, small: 26,
-    }[variant] || 36;
-    const petalWide = petalLen * 0.56;
-
-    for (let i = 0; i < petals; i++) {
-      const angle = (360 / petals) * i + rand(-4, 4);
-      const p = svgEl("path", {
-        d: `M ${cx} ${cy} C ${cx - petalWide} ${cy - petalLen * 0.4}, ${cx - petalWide * 0.6} ${cy - petalLen}, ${cx} ${cy - petalLen - petalLen * 0.15} C ${cx + petalWide * 0.6} ${cy - petalLen}, ${cx + petalWide} ${cy - petalLen * 0.4}, ${cx} ${cy}`,
-        fill: `url(#pg-${id})`,
-        stroke: petalColorDeep,
-        "stroke-width": 0.6,
-        "stroke-opacity": 0.35,
-        transform: `rotate(${angle} ${cx} ${cy})`,
-        class: "flower-petal",
-        style: `transition-delay:${(i * 25)}ms`,
-      });
-      petalGroup.appendChild(p);
-    }
-    svg.appendChild(petalGroup);
-
-    // centro
-    const centerRadius = { final: 26, secret: 21, primary: 14, secondary: 12, small: 7 }[variant] || 12;
-    const center = svgEl("circle", { cx, cy, r: centerRadius, fill: `url(#cg-${id})` });
-    svg.appendChild(center);
-
-    // textura de puntitos del centro
-    const dotCount = variant === "small" ? 0 : 8;
-    for (let i = 0; i < dotCount; i++) {
-      const a = (Math.PI * 2 * i) / dotCount + rand(-0.1, 0.1);
-      const r = centerRadius * rand(0.5, 0.95);
-      const dot = svgEl("circle", {
-        cx: cx + Math.cos(a) * r, cy: cy + Math.sin(a) * r,
-        r: variant === "final" || variant === "secret" ? 1.8 : 1.1,
-        fill: "#3E2A0F", opacity: 0.55,
-      });
-      center.parentNode === svg && svg.appendChild(dot);
-    }
-
-    return svg;
-  }
-
-  /* ---------------------------------------------------------
-     6. FÁBRICA DEL PERRITO DE LA PRADERA (SVG)
-  --------------------------------------------------------- */
   function createPrairieDogSVG({ withFlower = false } = {}) {
     const wrap = document.createElement("div");
     wrap.className = "prairie-dog";
