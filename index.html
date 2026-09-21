@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Para Melian · 21·09·2026</title>
+<meta name="description" content="Un pequeño jardín digital de flores amarillas.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='24' font-size='26'%3E%F0%9F%8C%BC%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+<div id="cursor-dot" aria-hidden="true"></div>
+<div id="cursor-halo" aria-hidden="true"></div>
+
+<button id="audio-toggle" type="button" aria-pressed="false">
+  <span class="audio-dot" aria-hidden="true"></span>
+  <span class="audio-label">activar ambiente</span>
+</button>
+
+<main id="stage">
+
+  <!-- ESCENA 01 · EL VACÍO -->
+  <section class="scene" id="scene-void" data-scene="void">
+    <div class="void-star" aria-hidden="true"></div>
+    <div class="scene-copy">
+      <p class="line" data-line="0">Hay días que pasan.</p>
+      <p class="line" data-line="1">Y hay días que uno decide guardar.</p>
+      <p class="line" data-line="2">Este es uno de esos.</p>
+      <p class="line date-line" data-line="3">21 · 09 · 2026</p>
+      <h1 class="line name-line" data-line="4">MELIAN</h1>
+    </div>
+    <button class="enter-door" id="enter-door" type="button" aria-label="Entrar">
+      <span class="enter-door-ring" aria-hidden="true"></span>
+      <span class="enter-door-label">entrar</span>
+    </button>
+  </section>
+
+  <!-- ESCENA 02 · EL JARDÍN NACE -->
+  <section class="scene" id="scene-bloom" data-scene="bloom">
+    <div class="scene-copy">
+      <p class="line" data-line="0">Este lugar no existía.</p>
+      <p class="line" data-line="1">Tuve que inventarlo.</p>
+      <p class="line" data-line="2">Pero pensé que necesitaba flores.</p>
+    </div>
+    <div id="bloom-ground" aria-hidden="true"></div>
+  </section>
+
+  <!-- ESCENA 03 · JARDÍN INTERACTIVO -->
+  <section class="scene" id="scene-garden" data-scene="garden">
+    <header class="garden-header">
+      <p class="garden-hint" id="garden-hint">toca una flor</p>
+      <p class="garden-count" id="garden-count" aria-live="polite">0 <span>/ 18 encontradas</span></p>
+    </header>
+
+    <div id="garden-field" aria-label="Jardín de flores amarillas, cada una guarda un pensamiento"></div>
+    <div id="dog-layer" aria-hidden="true"></div>
+
+    <div class="message-card" id="message-card" role="status" aria-live="polite">
+      <p class="message-text" id="message-text"></p>
+      <span class="message-kind" id="message-kind"></span>
+    </div>
+  </section>
+
+  <!-- ESCENA · ENTREGA DE LA FLOR -->
+  <section class="scene" id="scene-gift" data-scene="gift">
+    <div id="gift-dog-slot" aria-hidden="true"></div>
+    <div class="scene-copy gift-copy">
+      <p class="line" data-line="0">Creo que esto es para ti.</p>
+      <p class="line" data-line="1">Yo solamente soy el mensajero.</p>
+      <p class="line" data-line="2">Pero alguien quería asegurarse de que tuvieras una.</p>
+      <p class="line gift-name" data-line="3">Para Melian.</p>
+    </div>
+  </section>
+
+  <!-- ESCENA · FLOR SECRETA -->
+  <section class="scene" id="scene-secret" data-scene="secret">
+    <div id="secret-flower-slot" aria-hidden="true"></div>
+    <div class="scene-copy">
+      <p class="line" data-line="0">Esta era para ti.</p>
+      <p class="line" data-line="1">Las demás eran parte del camino.</p>
+    </div>
+  </section>
+
+  <!-- ESCENA · LO QUE TODAVÍA NOS QUEDA -->
+  <section class="scene" id="scene-future" data-scene="future">
+    <div class="future-field" id="future-field" aria-hidden="true"></div>
+    <p class="future-final" id="future-final">Porque esto recién es una pequeña parte de todo lo que todavía nos queda.</p>
+  </section>
+
+  <!-- ESCENA · LA CARTA -->
+  <section class="scene" id="scene-letter" data-scene="letter">
+    <div class="letter-sheet" id="letter-sheet">
+      <p class="letter-salute">Melian,</p>
+      <div class="letter-body">
+        <p>Hoy podría haberte regalado flores.</p>
+        <p>Pero pensé que algunas cosas bonitas merecían durar un poco más.</p>
+        <p>Así que hice esto.</p>
+        <p>Un pequeño lugar en Internet que, por unos minutos, existe solamente para ti.</p>
+        <p>Quería que hubiera muchas flores porque una sola se me quedaba corta. Y quería dejar aquí algunas cosas que quizá no siempre digo de la manera en que debería.</p>
+        <p>Quiero seguir compartiendo contigo los días simples, las noches largas, las risas tontas y todos esos lugares que todavía no conocemos.</p>
+        <p>Quiero que algún día podamos mirar hacia atrás y descubrir que construimos una cantidad absurda de recuerdos sin darnos cuenta de que algún día serían nuestros recuerdos favoritos.</p>
+        <p>Quiero seguir conociendo tus versiones futuras. Y quiero que tú también conozcas todas las versiones futuras de mí que todavía no existen.</p>
+        <p>Feliz día de las flores amarillas.</p>
+        <p>Y sí... técnicamente estas flores no se marchitan.</p>
+        <p>Pero espero que algún día pueda seguir regalándote flores de verdad. Porque esta página puede durar mucho. Pero prefiero mil veces verte sonreír con una flor entre las manos.</p>
+      </div>
+      <p class="letter-close">Te amo.</p>
+    </div>
+    <button class="scroll-cue" id="letter-continue" type="button">seguir</button>
+  </section>
+
+  <!-- ESCENA · PREGUNTA JUGUETONA -->
+  <section class="scene" id="scene-question" data-scene="question">
+    <div class="scene-copy question-copy">
+      <p class="line" data-line="0">Bueno.</p>
+      <p class="line" data-line="1">Ahora necesito comprobar algo.</p>
+      <p class="line question-line" data-line="2">¿Te gustaron?</p>
+    </div>
+    <p class="question-taunt" id="question-taunt" aria-live="polite"></p>
+    <div class="question-buttons">
+      <button class="q-btn q-yes" id="q-yes" type="button">sí</button>
+      <button class="q-btn q-no" id="q-no" type="button">no</button>
+    </div>
+  </section>
+
+  <!-- ESCENA · CELEBRACIÓN -->
+  <section class="scene" id="scene-celebration" data-scene="celebration">
+    <div id="celebration-dog-slot" aria-hidden="true"></div>
+    <div class="scene-copy">
+      <p class="line" data-line="0">Sabía que había una razón para hacer todo esto.</p>
+      <p class="line" data-line="1">Ahora sí.</p>
+      <p class="line celebration-final" data-line="2">Que caigan las flores.</p>
+    </div>
+  </section>
+
+  <!-- ESCENA FINAL · CIELO -->
+  <section class="scene" id="scene-sky" data-scene="sky">
+    <canvas id="sky-canvas" aria-hidden="true"></canvas>
+    <div class="scene-copy sky-copy">
+      <p class="line" data-line="0">Y si algún día se te olvida…</p>
+      <p class="line" data-line="1">mira arriba.</p>
+      <p class="line" data-line="2">Siempre habrá algo amarillo buscándote.</p>
+      <p class="line sky-signature" data-line="3">MELIAN · 21 · 09 · 2026</p>
+      <p class="line sky-close" data-line="4">Una flor para hoy. Una página para recordarlo.</p>
+    </div>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>

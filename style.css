@@ -1,0 +1,828 @@
+/* ============================================================
+   MELIAN · 21·09·2026
+   Un jardín digital. Paleta: oscuridad como lienzo, amarillo como luz.
+   ============================================================ */
+
+:root{
+  --black:        #0A0907;
+  --black-soft:   #14120E;
+  --earth:        #221C14;
+  --earth-2:      #33291A;
+  --cream:        #F4EBDD;
+  --white-warm:   #FFF9ED;
+  --saffron:      #E9B949;
+  --gold:         #F4D35E;
+  --gold-dim:     #C79A3B;
+  --ember:        #B9781F;
+
+  --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, "Cormorant Garamond", serif;
+  --sans: -apple-system, "Segoe UI", "DM Sans", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --ease-out: cubic-bezier(.16,.8,.24,1);
+  --ease-soft: cubic-bezier(.4,0,.2,1);
+  --dur-s: .5s;
+  --dur-m: 1.1s;
+  --dur-l: 2.2s;
+
+  color-scheme: dark;
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+
+html{
+  scroll-behavior: smooth;
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+}
+
+html, body{
+  height: 100%;
+  background: var(--black);
+}
+
+body{
+  margin: 0;
+  font-family: var(--sans);
+  color: var(--cream);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  cursor: default;
+}
+
+::selection{ background: var(--gold-dim); color: var(--black); }
+
+a{ color: inherit; }
+
+button{
+  font-family: inherit;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+[tabindex]:focus-visible{
+  outline: 1px solid var(--gold);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+
+svg{ display:block; overflow: visible; }
+
+/* ---------------------------------------------------------
+   Fondo de partículas — fijo, detrás de todo
+--------------------------------------------------------- */
+#bg-canvas{
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #1a150e 0%, var(--black) 55%, var(--black) 100%);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------
+   Cursor personalizado (desktop)
+--------------------------------------------------------- */
+#cursor-dot, #cursor-halo{
+  position: fixed;
+  top: 0; left: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 999;
+  transform: translate(-50%,-50%);
+  will-change: transform;
+}
+#cursor-dot{
+  width: 6px; height: 6px;
+  background: var(--gold);
+  box-shadow: 0 0 8px 1px rgba(244,211,94,.7);
+  transition: background .3s var(--ease-soft), width .25s, height .25s;
+}
+#cursor-halo{
+  width: 34px; height: 34px;
+  border: 1px solid rgba(244,211,94,.35);
+  transition: width .3s var(--ease-soft), height .3s var(--ease-soft), border-color .3s, background .3s, opacity .3s;
+}
+#cursor-halo.halo-flower{
+  width: 54px; height: 54px;
+  border-color: rgba(244,211,94,.8);
+  background: radial-gradient(circle, rgba(244,211,94,.12), transparent 70%);
+}
+#cursor-halo.halo-magnet{
+  width: 64px; height: 64px;
+  border-color: rgba(255,249,237,.5);
+}
+body.touch-device #cursor-dot,
+body.touch-device #cursor-halo{ display:none; }
+body.no-cursor #cursor-dot,
+body.no-cursor #cursor-halo{ opacity: 0; }
+
+/* ---------------------------------------------------------
+   Botón de audio
+--------------------------------------------------------- */
+#audio-toggle{
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: .55em;
+  padding: .7em 1.1em;
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: lowercase;
+  color: var(--cream);
+  background: rgba(20,18,14,.55);
+  border: 1px solid rgba(244,211,94,.25);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  transition: border-color .4s, background .4s, transform .3s var(--ease-out);
+}
+#audio-toggle:hover{ border-color: rgba(244,211,94,.6); transform: translateY(-2px); }
+.audio-dot{
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold-dim);
+  box-shadow: 0 0 0 0 rgba(244,211,94,.6);
+  transition: background .4s;
+}
+#audio-toggle[aria-pressed="true"] .audio-dot{
+  background: var(--gold);
+  animation: audio-pulse 2.4s ease-in-out infinite;
+}
+@keyframes audio-pulse{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(244,211,94,.5); }
+  50%{ box-shadow: 0 0 0 5px rgba(244,211,94,0); }
+}
+
+/* ---------------------------------------------------------
+   Escenario y escenas
+--------------------------------------------------------- */
+#stage{
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+.scene{
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8vh 6vw;
+  text-align: center;
+  opacity: 0;
+}
+.scene.active{
+  display: flex;
+}
+.scene.scene-visible{
+  animation: scene-in var(--dur-m) var(--ease-out) forwards;
+}
+.scene.scene-leaving{
+  animation: scene-out .7s var(--ease-soft) forwards;
+}
+@keyframes scene-in{
+  from{ opacity: 0; }
+  to{ opacity: 1; }
+}
+@keyframes scene-out{
+  from{ opacity: 1; }
+  to{ opacity: 0; }
+}
+
+.scene-copy{
+  position: relative;
+  z-index: 3;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: .85em;
+}
+
+.line{
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.1rem, 2.1vw + .6rem, 1.6rem);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--cream);
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(4px);
+}
+.line.line-in{
+  animation: line-reveal 1.4s var(--ease-out) forwards;
+}
+@keyframes line-reveal{
+  to{ opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* ============================================================
+   ESCENA 01 · VOID
+   ============================================================ */
+#scene-void{ gap: 6vh; }
+
+.void-star{
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 18px 4px rgba(244,211,94,.55);
+  transform: translate(-50%,-50%) scale(0);
+  opacity: 0;
+  transition: transform 2.4s var(--ease-out), opacity 2.4s var(--ease-out);
+}
+.void-star.star-in{
+  opacity: 1;
+  transform: translate(-50%,-50%) scale(1);
+}
+
+.date-line{
+  font-family: var(--sans);
+  font-size: .8rem;
+  letter-spacing: .3em;
+  color: var(--gold-dim);
+  margin-top: .4em;
+}
+.name-line{
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(2.2rem, 7vw, 4.2rem);
+  letter-spacing: .06em;
+  color: var(--white-warm);
+  text-shadow: 0 0 40px rgba(244,211,94,.18);
+}
+
+.enter-door{
+  position: relative;
+  margin-top: 5vh;
+  width: 78px; height: 78px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transform: scale(.85);
+  transition: opacity 1.6s var(--ease-out), transform 1.6s var(--ease-out);
+}
+.enter-door.door-in{ opacity: 1; transform: scale(1); }
+.enter-door-ring{
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(244,211,94,.45);
+  box-shadow: 0 0 30px 4px rgba(233,185,73,.15), inset 0 0 20px rgba(233,185,73,.08);
+  transition: transform .6s var(--ease-out), box-shadow .6s var(--ease-out), border-color .6s;
+}
+.enter-door:hover .enter-door-ring,
+.enter-door:focus-visible .enter-door-ring{
+  transform: scale(1.12);
+  border-color: var(--gold);
+  box-shadow: 0 0 46px 10px rgba(233,185,73,.28), inset 0 0 26px rgba(233,185,73,.16);
+}
+.enter-door-label{
+  position: relative;
+  z-index: 2;
+  font-family: var(--sans);
+  font-size: .68rem;
+  letter-spacing: .22em;
+  color: var(--gold);
+}
+.enter-door.door-open{
+  animation: door-flash 1.1s var(--ease-soft) forwards;
+}
+@keyframes door-flash{
+  0%{ transform: scale(1); }
+  60%{ transform: scale(14); opacity: 1; }
+  100%{ transform: scale(20); opacity: 0; }
+}
+
+/* ============================================================
+   ESCENA 02 · BLOOM (nace el jardín)
+   ============================================================ */
+#bloom-ground{
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 40%;
+  background: linear-gradient(to top, var(--earth) 0%, rgba(34,28,20,.5) 60%, transparent 100%);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 2s var(--ease-out), transform 2s var(--ease-out);
+  z-index: 1;
+}
+#bloom-ground.ground-in{ opacity: 1; transform: translateY(0); }
+
+#scene-bloom .scene-copy{ z-index: 3; margin-bottom: 8vh; }
+
+/* ============================================================
+   ESCENA 03 · JARDÍN
+   ============================================================ */
+#scene-garden{
+  padding: 0;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.garden-header{
+  position: absolute;
+  top: max(22px, env(safe-area-inset-top));
+  left: 0; right: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 5vw;
+  pointer-events: none;
+}
+.garden-hint{
+  margin: 0;
+  font-family: var(--sans);
+  font-size: .68rem;
+  letter-spacing: .2em;
+  text-transform: lowercase;
+  color: rgba(244,235,221,.55);
+  transition: opacity .6s;
+}
+.garden-count{
+  margin: 0;
+  font-family: var(--serif);
+  font-size: .85rem;
+  color: var(--gold);
+  letter-spacing: .04em;
+}
+.garden-count span{ color: rgba(244,235,221,.45); font-size: .78em; }
+
+#garden-field{
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 2;
+}
+
+.flower{
+  position: absolute;
+  transform-origin: 50% 100%;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform .5s var(--ease-out), filter .5s var(--ease-out);
+  animation: flower-sway var(--sway-dur, 6s) ease-in-out infinite;
+  animation-delay: var(--sway-delay, 0s);
+  filter: drop-shadow(0 0 7px rgba(244, 211, 94, .28)) drop-shadow(0 6px 10px rgba(0,0,0,.35));
+}
+@keyframes flower-sway{
+  0%, 100%{ transform: rotate(var(--tilt, -3deg)); }
+  50%{ transform: rotate(calc(var(--tilt, -3deg) * -1)); }
+}
+.flower:hover, .flower.flower-active{
+  transform: scale(1.1) rotate(0deg) !important;
+  animation-play-state: paused;
+  filter: drop-shadow(0 0 16px rgba(244, 211, 94, .55)) drop-shadow(0 6px 10px rgba(0,0,0,.4));
+}
+.flower.flower-discovered{
+  filter: drop-shadow(0 0 12px rgba(244, 211, 94, .42)) drop-shadow(0 6px 10px rgba(0,0,0,.4));
+}
+/* halo trasero: visible de forma tenue siempre, para que las flores se
+   noten claramente sobre el fondo oscuro, y se intensifica al tocarlas */
+.flower .flower-glow{
+  opacity: .38;
+  transition: opacity .6s var(--ease-soft);
+}
+.flower.flower-active .flower-glow,
+.flower.flower-discovered .flower-glow{
+  opacity: 1;
+}
+.flower-petal{
+  transition: transform .5s var(--ease-out);
+  transform-origin: 50% 100%;
+}
+.flower.flower-active .flower-petal{
+  transform: translateY(-2%) scale(1.03);
+}
+
+#dog-layer{
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.message-card{
+  position: fixed;
+  left: 50%;
+  bottom: max(28px, calc(env(safe-area-inset-bottom) + 18px));
+  transform: translate(-50%, 24px);
+  z-index: 10;
+  width: min(420px, 86vw);
+  padding: 1.1em 1.4em;
+  background: rgba(10,9,7,.72);
+  border: 1px solid rgba(244,211,94,.22);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .6s var(--ease-out), transform .6s var(--ease-out);
+}
+.message-card.card-visible{
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.message-text{
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--white-warm);
+}
+.message-kind{
+  display: block;
+  margin-top: .5em;
+  font-family: var(--sans);
+  font-size: .62rem;
+  letter-spacing: .18em;
+  text-transform: lowercase;
+  color: var(--gold-dim);
+}
+
+/* ============================================================
+   PERRITO DE LA PRADERA (SVG, reutilizado en varias escenas)
+   ============================================================ */
+.prairie-dog{
+  position: absolute;
+  width: 92px;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,.45));
+}
+.prairie-dog .pd-body-group{
+  animation: pd-breathe 3.2s ease-in-out infinite;
+  transform-origin: 50% 85%;
+}
+@keyframes pd-breathe{
+  0%,100%{ transform: scale(1,1); }
+  50%{ transform: scale(1.015,.985); }
+}
+.prairie-dog .pd-ear-l{ transform-origin: 60% 90%; animation: pd-ear 4.6s ease-in-out infinite; }
+.prairie-dog .pd-ear-r{ transform-origin: 40% 90%; animation: pd-ear 4.6s ease-in-out infinite reverse; }
+@keyframes pd-ear{
+  0%,80%,100%{ transform: rotate(0deg); }
+  90%{ transform: rotate(6deg); }
+}
+.prairie-dog .pd-eyelid-l,
+.prairie-dog .pd-eyelid-r{
+  transform-origin: 50% 50%;
+  transform: scaleY(0);
+  animation: pd-blink 5.2s ease-in-out infinite;
+}
+.prairie-dog .pd-eyelid-r{ animation-delay: .04s; }
+@keyframes pd-blink{
+  0%, 92%, 100%{ transform: scaleY(0); }
+  95%{ transform: scaleY(1); }
+}
+.prairie-dog .pd-head{
+  transform-origin: 50% 95%;
+  animation: pd-headtilt 7s ease-in-out infinite;
+}
+@keyframes pd-headtilt{
+  0%,100%{ transform: rotate(0deg); }
+  30%{ transform: rotate(-2.5deg); }
+  65%{ transform: rotate(1.5deg); }
+}
+.prairie-dog.pd-peek{ animation: pd-peek-up .9s var(--ease-out) forwards; }
+@keyframes pd-peek-up{
+  from{ transform: translateY(40%); opacity: 0; }
+  to{ transform: translateY(0%); opacity: 1; }
+}
+.prairie-dog.pd-hide{ animation: pd-peek-down .7s var(--ease-soft) forwards; }
+@keyframes pd-peek-down{
+  from{ transform: translateY(0%); opacity: 1; }
+  to{ transform: translateY(45%); opacity: 0; }
+}
+.prairie-dog.pd-sit{ animation: none; }
+.prairie-dog .pd-flower-prop{
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .5s, transform .5s;
+}
+.prairie-dog.pd-holding .pd-flower-prop{
+  opacity: 1;
+  transform: translateY(0);
+}
+.prairie-dog.pd-happy .pd-mouth{ d: path("M 40 60 Q 47 66 54 60"); }
+
+/* ============================================================
+   ESCENA · ENTREGA DE LA FLOR
+   ============================================================ */
+#scene-gift{ background: transparent; }
+#gift-dog-slot{
+  position: relative;
+  width: 160px; height: 160px;
+  margin-bottom: 3vh;
+  z-index: 3;
+}
+#gift-dog-slot .prairie-dog{
+  position: static;
+  width: 150px;
+}
+.gift-copy .gift-name{
+  margin-top: .6em;
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  color: var(--gold);
+  letter-spacing: .04em;
+}
+
+/* ============================================================
+   ESCENA · FLOR SECRETA
+   ============================================================ */
+#scene-secret{ background: var(--black); }
+#secret-flower-slot{
+  width: min(280px, 60vw);
+  height: min(280px, 60vw);
+  margin-bottom: 4vh;
+  z-index: 3;
+}
+
+/* ============================================================
+   ESCENA · FUTURO (palabras flotantes)
+   ============================================================ */
+#scene-future{ overflow: hidden; }
+.future-field{
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+.future-word{
+  position: absolute;
+  font-family: var(--serif);
+  font-size: clamp(1.1rem, 2.4vw, 1.7rem);
+  color: var(--cream);
+  opacity: 0;
+  white-space: nowrap;
+  transform: translateY(16px);
+}
+.future-word.word-in{
+  animation: word-drift 3.4s var(--ease-out) forwards;
+}
+@keyframes word-drift{
+  0%{ opacity: 0; transform: translateY(16px); }
+  15%{ opacity: 1; transform: translateY(0); }
+  85%{ opacity: 1; transform: translateY(-4px); }
+  100%{ opacity: 0; transform: translateY(-14px); }
+}
+.future-final{
+  position: relative;
+  z-index: 3;
+  max-width: 560px;
+  font-family: var(--serif);
+  font-size: clamp(1.15rem, 2.3vw, 1.6rem);
+  color: var(--gold);
+  opacity: 0;
+  transition: opacity 1.6s var(--ease-out);
+}
+.future-final.final-in{ opacity: 1; }
+
+/* ============================================================
+   ESCENA · LA CARTA
+   ============================================================ */
+#scene-letter{
+  align-items: center;
+  padding: 10vh 6vw 14vh;
+}
+.letter-sheet{
+  position: relative;
+  z-index: 3;
+  max-width: 560px;
+  max-height: 74vh;
+  overflow-y: auto;
+  padding: 3.2em 2.6em;
+  background:
+    radial-gradient(120% 100% at 30% 0%, rgba(244,211,94,.09), transparent 60%),
+    linear-gradient(160deg, #efe3cd 0%, #e7d8bc 55%, #ddccab 100%);
+  color: #2b2114;
+  border-radius: 3px;
+  box-shadow: 0 30px 70px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.06);
+  text-align: left;
+  opacity: 0;
+  transform: translateY(30px) scale(.98);
+  transition: opacity 1.4s var(--ease-out), transform 1.4s var(--ease-out);
+  -webkit-overflow-scrolling: touch;
+}
+.letter-sheet.letter-in{ opacity: 1; transform: translateY(0) scale(1); }
+.letter-sheet::-webkit-scrollbar{ width: 5px; }
+.letter-sheet::-webkit-scrollbar-thumb{ background: rgba(43,33,20,.25); border-radius: 4px; }
+
+.letter-salute{
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  margin: 0 0 .8em;
+  color: #2b2114;
+}
+.letter-body p{
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1em;
+  max-width: 68ch;
+  color: #362a19;
+}
+.letter-close{
+  margin: 1.4em 0 0;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  color: #2b2114;
+}
+
+.scroll-cue{
+  position: relative;
+  z-index: 3;
+  margin-top: 3vh;
+  font-size: .7rem;
+  letter-spacing: .2em;
+  color: var(--gold-dim);
+  padding: .6em 1.2em;
+  border: 1px solid rgba(244,211,94,.25);
+  border-radius: 999px;
+  transition: border-color .3s, color .3s, transform .3s var(--ease-out);
+}
+.scroll-cue:hover{ border-color: var(--gold); color: var(--gold); transform: translateY(-2px); }
+
+/* ============================================================
+   ESCENA · PREGUNTA
+   ============================================================ */
+.question-line{
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  color: var(--gold);
+  margin-top: .3em;
+}
+.question-taunt{
+  min-height: 1.6em;
+  margin: 3vh 0 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--gold-dim);
+  opacity: 0;
+  transition: opacity .5s var(--ease-out);
+}
+.question-taunt.taunt-in{ opacity: 1; }
+
+.question-buttons{
+  position: relative;
+  margin-top: 5vh;
+  width: 100%;
+  max-width: 420px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4em;
+}
+.q-btn{
+  padding: .85em 2.1em;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: .85rem;
+  letter-spacing: .08em;
+  border: 1px solid rgba(244,235,221,.25);
+  transition: transform .35s var(--ease-out), background .3s, border-color .3s, color .3s;
+}
+.q-yes{
+  color: var(--black);
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.q-yes:hover{ transform: translateY(-2px) scale(1.03); }
+.q-yes.q-yes-big{
+  padding: 1.15em 3em;
+  font-size: 1rem;
+  box-shadow: 0 0 40px rgba(244,211,94,.35);
+}
+.q-no{
+  position: relative;
+  color: var(--cream);
+  background: transparent;
+}
+.q-no.q-no-escaping{
+  position: fixed;
+  transition: left .35s var(--ease-out), top .35s var(--ease-out), transform .35s var(--ease-out);
+}
+
+/* ============================================================
+   ESCENA · CELEBRACIÓN
+   ============================================================ */
+#celebration-dog-slot{
+  position: relative;
+  width: 150px; height: 150px;
+  margin-bottom: 3vh;
+  z-index: 3;
+}
+#celebration-dog-slot .prairie-dog{ position: static; width: 140px; }
+.celebration-final{
+  color: var(--gold);
+  font-size: clamp(1.4rem, 3.4vw, 2rem);
+}
+
+/* ============================================================
+   ESCENA FINAL · CIELO
+   ============================================================ */
+#scene-sky{ overflow: hidden; }
+#sky-canvas{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+.sky-copy{ z-index: 3; }
+.sky-signature{
+  margin-top: .6em;
+  font-size: .78rem;
+  letter-spacing: .25em;
+  color: var(--gold-dim);
+}
+.sky-close{
+  margin-top: 1.4em;
+  font-size: 1rem;
+  color: var(--cream);
+  opacity: .85;
+}
+
+/* ============================================================
+   Capas ambientales comunes (ramas / polen / textura de tierra)
+   ============================================================ */
+.ambient-layer{
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.grain-overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  opacity: .025;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* mix-blend-mode retirado: es una de las causas más comunes de caída de FPS
+   en móviles, porque obliga a recomponer esta capa completa en cada frame
+   en el que algo se mueve debajo. La opacidad baja logra un efecto similar
+   sin ese costo. */
+@media (max-width: 720px), (hover: none){
+  .grain-overlay{ display: none; }
+}
+
+/* ============================================================
+   Accesibilidad · reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .line{ filter: none; }
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 720px){
+  .scene{ padding: 7vh 7vw; }
+  .line{ font-size: clamp(1.02rem, 4.6vw, 1.3rem); }
+  .name-line{ font-size: clamp(2rem, 12vw, 2.8rem); }
+  .garden-header{ padding: 0 5vw; }
+  .message-card{ width: 90vw; padding: 1em 1.2em; }
+  .letter-sheet{ padding: 2.2em 1.5em; max-height: 68vh; }
+  .letter-body p{ font-size: .96rem; }
+  #audio-toggle{ font-size: .62rem; padding: .6em .95em; }
+  .flower{
+    transition: transform .35s var(--ease-out);
+    /* un solo drop-shadow en vez de dos: la mitad de costo de render en gama media/baja */
+    filter: drop-shadow(0 0 8px rgba(244, 211, 94, .38));
+  }
+  .flower:hover, .flower.flower-active, .flower.flower-discovered{
+    filter: drop-shadow(0 0 14px rgba(244, 211, 94, .55));
+  }
+  .question-buttons{ gap: 1em; }
+}
+
+@media (max-width: 420px){
+  .name-line{ font-size: 2.2rem; }
+  .letter-salute{ font-size: 1.25rem; }
+  .letter-close{ font-size: 1.15rem; }
+}
+
+@media (hover: none){
+  #cursor-dot, #cursor-halo{ display: none; }
+}
